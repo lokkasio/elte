@@ -1,68 +1,102 @@
-const eachEntries = function (object, callback) {
-  object && Object.entries(object).forEach(callback)
-}
+import { _onDisconnect } from "compone/ext/onDisconnect"
 
-export const el = function (element) {
+const eachEntries = (object, callback) =>
+  object && Object.entries(object).forEach(callback)
+
+export const el = (element) => {
   const cache = {}
   const listeners = {}
-  const cachedSideEffect = function (prop, value, callback) {
-    if (cache[prop] !== undefined || cache[prop] !== value) {
-      cache[prop] = value
-      callback(element)
-    }
+  const propertyChanged = (prop, value) => cache[prop] !== (cache[prop] = value)
+  const removeEventListener = (type, listener, options) => {
+    element.removeEventListener(type, listener, options)
+    delete listeners[type]
   }
 
-  const update = function (data) {
-    cachedSideEffect('t', data.text, function (node) {
-      return (node.textContent = data.text)
-    })
-
-    eachEntries(data.class, function ([className, add]) {
-      return cachedSideEffect('c' + className, add, function (node) {
-        return node.classList[add ? 'add' : 'remove'](className)
-      })
-    })
-
-    eachEntries(data.style, function ([prop, value]) {
-      return cachedSideEffect('s' + prop, value, function (node) {
-        return (node.style[prop] = value)
-      })
-    })
-
-    eachEntries(data.attr, function ([attr, value]) {
-      return cachedSideEffect('a' + attr, value, function (node) {
-        return node[value || value === 0 ? 'setAttribute' : 'removeAttribute'](
-          attr,
-          value
-        )
-      })
-    })
-
-    eachEntries(data.events, function ([type, handler]) {
-      const [prevListener, prevOptions] = listeners[type] || []
-      const [listener, options] = (handler && [].concat(handler)) || []
-
-      if (prevListener !== listener) {
-        if (prevListener) {
-          element.removeEventListener(type, prevListener, prevOptions)
-          delete listeners[type]
-        }
-        if (listener) {
-          element.addEventListener(type, listener, options)
-          listeners[type] = [listener, options]
-        }
-      }
-    })
-
+  const update = (data) => {
+    for (const key in data) {
+      update[key](data[key])
+    }
     return update
   }
 
-  update.disconnect = function () {
-    return eachEntries(listeners, function ([type, handler]) {
-      const [prevListener, prevOptions] = handler
-      element.removeEventListener(type, prevListener, prevOptions)
-    })
+  update.text = (data) => {
+    propertyChanged("t", data) && (element.textContent = data)
+    return update
+  }
+
+  update.class = (data) => {
+    eachEntries(
+      data,
+      ([className, add]) =>
+        propertyChanged("c" + className, add) &&
+        element.classList[add ? "add" : "remove"](className)
+    )
+    return update
+  }
+
+  update.style = (data) => {
+    eachEntries(
+      data,
+      ([prop, value]) =>
+        propertyChanged("s" + prop, value) && (element.style[prop] = value)
+    )
+    return update
+  }
+
+  update.attr = (data) => {
+    eachEntries(
+      data,
+      ([attr, value]) =>
+        propertyChanged("a" + attr, value) &&
+        element[
+          value === false || value == null ? "removeAttribute" : "setAttribute"
+        ](attr, value)
+    )
+    return update
+  }
+
+  update.props = (data) => {
+    eachEntries(
+      data,
+      ([prop, value]) =>
+        propertyChanged("p" + prop, value) && (element[prop] = value)
+    )
+    return update
+  }
+
+  update.events = (data) => {
+    if (data === false) {
+      eachEntries(listeners, ([type, [prevListener, prevOptions]]) => {
+        removeEventListener(type, prevListener, prevOptions)
+      })
+    } else {
+      eachEntries(data, ([type, handler]) => {
+        const [prevListener, prevOptions] = listeners[type] || []
+        const [nextListener, nextOptions] =
+          (handler && [].concat(handler)) || []
+
+        if (prevListener !== nextListener) {
+          if (prevListener) {
+            removeEventListener(type, prevListener, prevOptions)
+          }
+          if (nextListener) {
+            element.addEventListener(type, nextListener, nextOptions)
+            listeners[type] = [nextListener, nextOptions]
+          }
+        }
+      })
+    }
+    return update
   }
 
   return update
+}
+
+export const _el = (host) => {
+  const onDisconnect = _onDisconnect(host)
+  return (element) => {
+    const e = el(element)
+    onDisconnect(() => e.events(false))
+    return e
+  }
 }

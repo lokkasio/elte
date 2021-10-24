@@ -1,5 +1,13 @@
-node_modules
-package-lock.json
-.DS_Store
-dist
+# Logs
+logs
 *.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Output of 'npm pack'
+*.tgz

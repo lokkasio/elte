@@ -1,11 +1,13 @@
-import { el } from '../../src/el'
-import { fixture, $ } from '../utils'
+import { el } from "../../src/el.js"
+import { fixture, $ } from "../utils.js"
+const { module, test } = QUnit
 
-QUnit.module('el attr', function () {
-  QUnit.test('set event', function (assert) {
+module("el events", () => {
+  test("set event", (assert) => {
     const done = assert.async()
     fixture`<p></p>`
-    const e = el($('p'))
+    const p = $("p")
+    const e = el(p)
     e({
       events: {
         click() {
@@ -14,14 +16,15 @@ QUnit.module('el attr', function () {
         },
       },
     })
-    $('p').click()
+    p.click()
   })
 
-  QUnit.test('change event', function (assert) {
+  test("change event", (assert) => {
     const done = assert.async()
     const done2 = assert.async()
     fixture`<p></p>`
-    const e = el($('p'))
+    const p = $("p")
+    const e = el(p)
     e({
       events: {
         click() {
@@ -38,15 +41,16 @@ QUnit.module('el attr', function () {
         },
       },
     })
-    $('p').click()
-    $('p').click()
+    p.click()
+    p.click()
   })
 
-  QUnit.test('remove event', function (assert) {
+  test("remove event", (assert) => {
     assert.expect(1)
     const done = assert.async()
     fixture`<p></p>`
-    const e = el($('p'))
+    const p = $("p")
+    const e = el(p)
     e({
       events: {
         click() {
@@ -60,25 +64,28 @@ QUnit.module('el attr', function () {
         },
       },
     })
-    $('p').click()
-    $('p').click()
+    p.click()
+    p.click()
   })
 
-  QUnit.test('disconnect', function (assert) {
+  test("remove all events", (assert) => {
     assert.expect(1)
     const done = assert.async()
     fixture`<p></p>`
-    const e = el($('p'))
+    const p = $("p")
+    const e = el(p)
     e({
       events: {
         click() {
           assert.ok(true)
-          e.disconnect()
+          e({
+            events: false,
+          })
           done()
         },
       },
     })
-    $('p').click()
-    $('p').click()
+    p.click()
+    p.click()
   })
 })

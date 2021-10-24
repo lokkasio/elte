@@ -9,11 +9,11 @@ Create an `el` instance by calling `el()` with an `Element`.
 ```html
 <p class="my-element"></p>
 <script>
-  const e = el(document.querySelector('.my-element'))
+  const e = el(document.querySelector(".my-element"))
 </script>
 ```
 
-`e` is now a function, that takes an object with properties `text`, `class`, `style`, `attr` and `events`. All properties are optional.
+`e` is now an object with properties `text`, `class`, `style`, `attr`, `props` and `events`.
 
 ### `text`
 
@@ -23,14 +23,10 @@ Set the text of the element
 
 ```js
 // set/replace text
-e({
-  text: 'Hello',
-})
+e.text("Hello")
 
 // remove text
-e({
-  text: '',
-})
+e.text("")
 ```
 
 ### `class`
@@ -40,11 +36,9 @@ Add/remove classes
 (uses `element.classList.[add|remove]` internally)
 
 ```js
-e({
-  class: {
-    active: true, // add class
-    'my-element--hidden': false, // remove class
-  },
+e.class({
+  active: true, // add class
+  "my-element--hidden": false, // remove class
 })
 ```
 
@@ -55,12 +49,10 @@ Set/replace/remove inline styles
 (uses `element.style` internally)
 
 ```js
-e({
-  style: {
-    color: '#000', // set `color`
-    fontSize: '1.5rem' // set `font-size` (note that the property names are in camel-case)
-    padding: null // remove `padding`
-  }
+e.style({
+  color: "#000", // set `color`
+  fontSize: "1.5rem" // set `font-size` (note that the property names are in camel-case)
+  padding: null // remove `padding`
 })
 ```
 
@@ -71,12 +63,10 @@ Set/replace/remove an attribute
 (uses `element.[setAttribute|removeAttribute]` internally)
 
 ```js
-e({
-  attr: {
-    lang: 'en', // add/replace an attribute
-    'aria-hidden': 'false', // add/replace an attribute
-    'data-foo': false, // remove an attribute
-  },
+e.attr({
+  lang: "en", // add/replace an attribute
+  "aria-hidden": "false", // add/replace an attribute
+  "data-foo": false, // remove an attribute
 })
 ```
 
@@ -86,27 +76,24 @@ Add/remove event listener.
 
 There is only one listener per event type. If you define a listener, a previous defined listener of the same type will be replaced.
 
-(uses `element.[[addEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener)|[removeEventListener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/removeEventListener)]` internally)
+(uses `element.[addEventListener|removeEventListener]` internally)
 
 ```js
-e({
-  events: {
-    click(event) { … }, // add/replace a listener
-    scroll: [ // add/replace a listener with options
-      function(event) { … },
-      { passive: true }
-    ],
-    focus: false // remove a listener
-  }
+e.events({
+  click(event) { … }, // add/replace a listener
+  scroll: [ // add/replace a listener with options
+    function(event) { … },
+    { passive: true }
+  ],
+  focus: false // remove a listener
 })
 
-// remove all event listeners
-e.disconnect()
+e.events(false)  // remove all event listeners
 ```
 
 ## `te`
 
-Create a `te` instance by calling `te()` with a `HTMLTemplateElement`.
+Create a `te` instance by calling `te()` with a `HTMLTemplateElement` and a callback function that will be called with each element.
 
 ```html
 <ul>
@@ -115,25 +102,26 @@ Create a `te` instance by calling `te()` with a `HTMLTemplateElement`.
   </template>
 </ul>
 <script>
-  const t = te(document.getElementById('my-template'))
+  const t = te(
+    document.getElementById("my-template"),
+    (element) => (record) => (element.textContent = record.text)
+  )
 </script>
 ```
 
-`t` is now a function, that takes an array of objects, where the keys are selector strings and the values are `el` config objects.
+`t` is now a function, that takes an array of objects, where the `key` property has to be a unique identifier. This object will be passed to the updateCallback.
 
 ```js
 t([
   {
-    li: {
-      text: 'First item',
-    },
+    key: "0",
+    text: "First item",
   },
   {
-    li: {
-      text: 'Second item',
-    },
+    key: "1",
+    text: "Second item",
   },
 ])
 ```
 
-For each array item, `te` will copy the content of the `<template>` next to itself and modify the elements via `el`.
+For each array item, `te` will copy the element inside the `<template>` next to itself, initialize it with the connectedCallback and modify it with the updateCallback.
