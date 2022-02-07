@@ -25,17 +25,14 @@
     "prepare": "husky install",
     "test": "karma start karma.conf.cjs"
   },
-  "dependencies": {
-    "compone": "0.0.0"
-  },
   "devDependencies": {
-    "esbuild": "^0.13.9",
+    "esbuild": "^0.14.20",
     "husky": "^7.0.4",
-    "karma": "^6.3.5",
+    "karma": "^6.3.15",
     "karma-esbuild": "^2.2.0",
-    "karma-firefox-launcher": "^2.1.1",
+    "karma-firefox-launcher": "^2.1.2",
     "karma-qunit": "^4.1.2",
-    "prettier": "^2.4.1",
+    "prettier": "^2.5.1",
     "qunit": "^2.17.2"
   }
 }

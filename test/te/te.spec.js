@@ -8,10 +8,12 @@ module("te", () => {
       <template id="template">
         <li></li>
       </template>
+      <ul id="list"></ul>
     `
     const done = assert.async()
     const t = te(
       $("#template"),
+      $("#list"),
       (element) => (record) => element.setAttribute("class", record.class),
       "class"
     )

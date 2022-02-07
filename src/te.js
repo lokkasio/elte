@@ -1,58 +1,50 @@
-import { whenDefined } from "compone"
-import { connect, disconnect } from "compone/core"
-
 const noop = () => {}
 const DATA_KEY = "teKey"
 const KEY_PROP = Symbol(DATA_KEY)
-const API_PROP = Symbol("teUpdate")
+const UPDATE_PROP = Symbol("teUpdate")
 
-export const te = (template, connectedCb = noop, keyProp = "key") => {
-  const parent = template.parentElement
+export const te = (template, target, connectedCb = noop, keyProp = "key") => {
   const elements = new Map()
 
   const addElement = (element, key) => {
     element[KEY_PROP] = key
-    connect(element, connectedCb, API_PROP)
+    element[UPDATE_PROP] = connectedCb(element) ?? noop
     elements.set(key, element)
   }
 
-  let rendered = template
-  while (
-    (rendered = rendered.nextElementSibling) &&
-    DATA_KEY in rendered.dataset
-  ) {
-    addElement(rendered, rendered.dataset[DATA_KEY])
+  for (const child of target.children) {
+    if (DATA_KEY in child.dataset) {
+      addElement(child, child.dataset[DATA_KEY])
+    } else {
+      target.removeChild(child)
+    }
   }
 
   return (records) => {
-    const lastElement = records.reduce((currentElement, record) => {
+    let lastElement = records.reduce((currentElement, record) => {
       const key = record[keyProp] ?? Math.random()
-      const nextSibling = currentElement.nextElementSibling
-      let element = nextSibling
+      let element = currentElement
 
+      element = elements.get(key)
       if (!element || element[KEY_PROP] !== key) {
-        element = elements.get(key)
         if (!element) {
           element = template.content.firstElementChild.cloneNode(true)
-          parent.insertBefore(element, nextSibling)
+          target.insertBefore(element, currentElement)
           addElement(element, key)
         } else {
-          parent.insertBefore(element, nextSibling)
+          target.insertBefore(element, currentElement)
         }
       }
 
-      whenDefined(element, API_PROP).then((cb) => cb && cb(record))
-      return element
-    }, template)
+      element[UPDATE_PROP](record)
+      return element.nextElementSibling
+    }, target.firstElementChild)
 
-    let elementToDelete
-    while (
-      (elementToDelete = lastElement.nextElementSibling) &&
-      KEY_PROP in elementToDelete
-    ) {
-      parent.removeChild(elementToDelete)
-      disconnect(elementToDelete, API_PROP)
-      elements.delete(elementToDelete[KEY_PROP])
+    while (lastElement) {
+      const nextElementToDelete = lastElement.nextElementSibling
+      target.removeChild(lastElement)
+      elements.delete(lastElement[KEY_PROP])
+      lastElement = nextElementToDelete
     }
   }
 }

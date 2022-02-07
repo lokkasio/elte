@@ -96,15 +96,19 @@ e.events(false)  // remove all event listeners
 Create a `te` instance by calling `te()` with a `HTMLTemplateElement` and a callback function that will be called with each element.
 
 ```html
-<ul>
-  <template id="my-template">
-    <li></li>
-  </template>
-</ul>
+<template id="my-template">
+  <li></li>
+</template>
+<ul id="list"></ul>
 <script>
   const t = te(
     document.getElementById("my-template"),
-    (element) => (record) => (element.textContent = record.text)
+    document.getElementById("list"),
+    function connectedCallback(element) {
+      return function updateCallback(record) {
+        element.textContent = record.text
+      }
+    }
   )
 </script>
 ```
@@ -124,4 +128,4 @@ t([
 ])
 ```
 
-For each array item, `te` will copy the element inside the `<template>` next to itself, initialize it with the connectedCallback and modify it with the updateCallback.
+For each array item, `te` will copy the element inside the `<template>` into the target element, initialize it with the connectedCallback and modify it with the updateCallback.
